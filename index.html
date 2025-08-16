@@ -2,10 +2,13 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <style>
     body {
       margin: 0;
-      background: green;
+      background: transparent;
       color: white;
       font-family: 'Segoe UI', sans-serif;
       overflow: hidden;
@@ -17,15 +20,39 @@
       height: 100vh;
     }
 
+    #background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      object-position: center right;
+      filter: blur(20px) brightness(0.4) contrast(1.2);
+      z-index: -2;
+      transition: opacity 0.5s ease;
+    }
+
+    #gradient-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(to right, black 0%, black 30%, rgba(0,0,0,0.7) 60%, transparent 100%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
     #broll {
+      position: absolute;
+      left: 0;
+      top: 23vh;
       width: 80vw;
       height: 50vh;
       object-fit: contain;
       border-radius: 12px;
-      box-shadow: 0 0 20px #000;
-      transition: transform 0.2s ease;
-      margin-top: 23vh;
-      margin-left: 9vw;
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       transform: scale(1);
       touch-action: none; /* important for pinch detection */
     }
@@ -33,25 +60,37 @@
     #caption {
       position: absolute;
       top: 20px;
-      left: 30px;
+      left: 5px;
       font-size: 70px;
       font-weight: 900;
       color: white;
       font-family: 'Montserrat', 'Segoe UI', sans-serif;
-      text-shadow:
-        -1px -1px 0 #000,
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
-      background-color: rgba(0, 0, 0, 0.4);
-      padding: 6px 12px;
-      border-radius: 6px;
+      -webkit-text-stroke: 3px black;
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       z-index: 10; /* stays above image */
+    }
+
+    .slide-out-left {
+      transform: translateX(-100vw) !important;
+    }
+
+    .slide-out-right {
+      transform: translateX(100vw) !important;
+    }
+
+    .slide-in-left {
+      transform: translateX(-100vw) !important;
+    }
+
+    .slide-in-right {
+      transform: translateX(100vw) !important;
     }
   </style>
 </head>
 <body>
   <div id="wrapper">
+    <img id="background" src="" />
+    <div id="gradient-overlay"></div>
     <img id="broll" src="" />
     <div id="caption"></div>
   </div>
@@ -64,6 +103,7 @@
 
     const broll = document.getElementById("broll");
     const caption = document.getElementById("caption");
+    const background = document.getElementById("background");
 
     function checkImage(path) {
       return new Promise((resolve) => {
@@ -98,15 +138,50 @@
       update();
     }
 
-    function update() {
-      if (!images.length) return;
+    let isTransitioning = false;
+    let slideDirection = 'right'; // Track slide direction
 
-      // Reset zoom on image change
+    function update(direction = 'right') {
+      if (!images.length || isTransitioning) return;
+      
+      isTransitioning = true;
+      slideDirection = direction;
+      
+      const slideInClass = direction === 'left' ? 'slide-in-right' : 'slide-in-left';
+      
+      // Hide current image and text instantly
+      broll.style.opacity = '0';
+      caption.style.opacity = '0';
+      
+      // Reset zoom and translation
       currentScale = 1;
-      broll.style.transform = "scale(1)";
-
-      broll.src = images[current].src;
-      caption.textContent = images[current].caption;
+      currentTranslateX = 0;
+      currentTranslateY = 0;
+      
+      // Update content after brief delay
+      setTimeout(() => {
+        // Update image and text content
+        broll.src = images[current].src;
+        background.src = images[current].src;
+        caption.textContent = images[current].caption;
+        
+        // Position new image off-screen for slide in
+        broll.classList.add(slideInClass);
+        broll.style.opacity = '1';
+        
+        // Slide in new content
+        setTimeout(() => {
+          broll.style.transform = "translate(0px, 0px) scale(1)";
+          broll.classList.remove(slideInClass);
+          caption.style.opacity = '1';
+          caption.style.transform = "translateX(0)";
+          caption.classList.remove(slideInClass);
+          isTransitioning = false;
+        }, 50);
+      }, 200);
+      
+      // Force OBS refresh
+      document.body.style.setProperty('--refresh', Date.now());
     }
 
     // --- Swipe / pinch detection ---
@@ -151,10 +226,10 @@
       if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 30) {
         if (xDiff > 0 && current < images.length - 1) {
           current++;
-          update();
+          update('left'); // Swipe left (finger goes left) → content comes from right
         } else if (xDiff < 0 && current > 0) {
           current--;
-          update();
+          update('right'); // Swipe right (finger goes right) → content comes from left
         }
       }
 
@@ -165,12 +240,27 @@
 
     // --- Pinch zoom for image only ---
     let currentScale = 1;
+    let currentTranslateX = 0;
+    let currentTranslateY = 0;
     let startDistance = 0;
+    let startCenterX = 0;
+    let startCenterY = 0;
+    let initialCenterX = 0;
+    let initialCenterY = 0;
 
     broll.addEventListener("touchstart", (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
         startDistance = getDistance(e.touches[0], e.touches[1]);
+        
+        // Get pinch center point
+        startCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        startCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        
+        // Convert to image-relative coordinates
+        const rect = broll.getBoundingClientRect();
+        initialCenterX = (startCenterX - rect.left - rect.width / 2) / currentScale;
+        initialCenterY = (startCenterY - rect.top - rect.height / 2) / currentScale;
       }
     }, { passive: false });
 
@@ -178,15 +268,37 @@
       if (e.touches.length === 2) {
         e.preventDefault();
         const newDistance = getDistance(e.touches[0], e.touches[1]);
-        const zoomFactor = newDistance / startDistance;
-        broll.style.transform = `scale(${currentScale * zoomFactor})`;
+        let newScale = currentScale * (newDistance / startDistance);
+        
+        // Prevent zooming out beyond original size
+        newScale = Math.max(1, newScale);
+        
+        // Calculate new translation to keep zoom centered on pinch point
+        let newTranslateX = currentTranslateX - initialCenterX * (newScale - currentScale);
+        let newTranslateY = currentTranslateY - initialCenterY * (newScale - currentScale);
+        
+        // When at original size (scale = 1), force translation to center (0, 0)
+        if (newScale === 1) {
+          newTranslateX = 0;
+          newTranslateY = 0;
+        }
+        
+        broll.style.transform = `translate(${newTranslateX}px, ${newTranslateY}px) scale(${newScale})`;
       }
     }, { passive: false });
 
     broll.addEventListener("touchend", (e) => {
       if (e.touches.length < 2) {
-        const match = broll.style.transform.match(/scale\(([^)]+)\)/);
-        if (match) currentScale = parseFloat(match[1]);
+        // Parse current transform values
+        const transform = broll.style.transform;
+        const scaleMatch = transform.match(/scale\(([^)]+)\)/);
+        const translateMatch = transform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
+        
+        if (scaleMatch) currentScale = parseFloat(scaleMatch[1]);
+        if (translateMatch) {
+          currentTranslateX = parseFloat(translateMatch[1]);
+          currentTranslateY = parseFloat(translateMatch[2]);
+        }
       }
     });
 
@@ -194,14 +306,14 @@
       return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
     }
 
-    // Arrow keys navigation
+    // Keyboard navigation
     document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight" && current < images.length - 1) {
+      if ((e.key === "ArrowRight" || e.key === " " || e.key === "Enter") && current < images.length - 1) {
         current++;
-        update();
+        update('left'); // Arrow right → content comes from right
       } else if (e.key === "ArrowLeft" && current > 0) {
         current--;
-        update();
+        update('right'); // Arrow left → content comes from left
       }
     });
 
