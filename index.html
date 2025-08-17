@@ -56,10 +56,46 @@
       border-radius: 12px;
       transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       transform: scale(1);
-      touch-action: none; /* important for pinch detection */
+      touch-action: none;
       animation: pulse 1.5s ease-in-out infinite;
-      will-change: transform; /* GPU acceleration hint */
-      backface-visibility: hidden; /* Optimization */
+      will-change: transform;
+      backface-visibility: hidden;
+    }
+
+    #next-preview {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 120px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      opacity: 0.8;
+      transition: all 0.4s ease;
+      z-index: 100;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      filter: brightness(0.7);
+    }
+
+    #next-preview:hover {
+      opacity: 1;
+      filter: brightness(1);
+      transform: scale(1.05);
+    }
+
+    #next-label {
+      position: fixed;
+      top: 108px;
+      right: 20px;
+      width: 120px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 101;
+      transition: opacity 0.4s ease;
     }
 
     @keyframes pulse {
@@ -106,6 +142,8 @@
     <img id="background" src="" />
     <div id="gradient-overlay"></div>
     <img id="broll" src="" />
+    <img id="next-preview" src="" />
+    <div id="next-label">NEXT</div>
     <div id="caption"></div>
   </div>
 
@@ -116,6 +154,8 @@
     let current = 0;
 
     const broll = document.getElementById("broll");
+    const nextPreview = document.getElementById("next-preview");
+    const nextLabel = document.getElementById("next-label");
     const caption = document.getElementById("caption");
     const background = document.getElementById("background");
 
@@ -149,11 +189,38 @@
         })
       )).filter(Boolean);
 
-      update();
+      updateCarousel();
     }
 
     let isTransitioning = false;
     let slideDirection = 'right'; // Track slide direction
+
+    function updateCarousel() {
+      if (!images.length) return;
+      
+      // Update main image and background
+      broll.src = images[current].src;
+      background.src = images[current].src;
+      caption.textContent = images[current].caption;
+      
+      // Update next preview
+      if (current < images.length - 1) {
+        nextPreview.src = images[current + 1].src;
+        nextPreview.style.opacity = '0.8';
+        nextLabel.style.opacity = '0.8';
+      } else {
+        nextPreview.style.opacity = '0';
+        nextLabel.style.opacity = '0';
+      }
+      
+      // Reset zoom and translation
+      currentScale = 1;
+      currentTranslateX = 0;
+      currentTranslateY = 0;
+      broll.style.setProperty('--base-scale', '1');
+      broll.style.transform = "translate(0px, 0px) scale(1)";
+      
+    }
 
     function update(direction = 'right') {
       if (!images.length || isTransitioning) return;
@@ -166,6 +233,7 @@
       // Hide current image and text instantly
       broll.style.opacity = '0';
       caption.style.opacity = '0';
+      nextPreview.style.opacity = '0';
       
       // Reset zoom and translation
       currentScale = 1;
@@ -174,10 +242,7 @@
       
       // Update content after brief delay
       setTimeout(() => {
-        // Update image and text content
-        broll.src = images[current].src;
-        background.src = images[current].src;
-        caption.textContent = images[current].caption;
+        updateCarousel();
         
         // Position new image off-screen for slide in
         broll.classList.add(slideInClass);
@@ -195,8 +260,6 @@
         }, 50);
       }, 200);
       
-      // Force OBS refresh
-      document.body.style.setProperty('--refresh', Date.now());
     }
 
     // --- Swipe / pinch detection ---
