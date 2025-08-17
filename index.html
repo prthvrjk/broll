@@ -62,40 +62,62 @@
       backface-visibility: hidden;
     }
 
-    #next-preview {
+    #next-strip {
       position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 120px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-      opacity: 0.8;
-      transition: all 0.4s ease;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
       z-index: 100;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      filter: brightness(0.7);
+      transition: opacity 0.4s ease;
     }
 
-    #next-preview:hover {
-      opacity: 1;
-      filter: brightness(1);
+    .next-card {
+      position: relative;
+      transition: all 0.4s ease;
+    }
+
+    .next-card:hover {
       transform: scale(1.05);
     }
 
-    #next-label {
-      position: fixed;
-      top: 108px;
-      right: 20px;
-      width: 120px;
-      text-align: center;
-      font-size: 12px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.8);
+    .next-card img {
+      width: 176px;
+      height: 99px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      filter: brightness(0.7);
+      transition: all 0.4s ease;
+    }
+
+    .next-card:hover img {
+      filter: brightness(1);
+    }
+
+    #next-1 {
+      opacity: 1;
+    }
+
+    #next-1 img {
+      filter: brightness(1);
+    }
+
+    #next-2 {
+      opacity: 0.8;
+    }
+
+    .next-label {
+      position: absolute;
+      top: -25px;
+      left: 0;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
-      z-index: 101;
-      transition: opacity 0.4s ease;
+      z-index: 1;
     }
 
     @keyframes pulse {
@@ -142,8 +164,15 @@
     <img id="background" src="" />
     <div id="gradient-overlay"></div>
     <img id="broll" src="" />
-    <img id="next-preview" src="" />
-    <div id="next-label">NEXT</div>
+    <div id="next-strip">
+      <div class="next-card" id="next-1">
+        <div class="next-label">NEXT</div>
+        <img src="" />
+      </div>
+      <div class="next-card" id="next-2">
+        <img src="" />
+      </div>
+    </div>
     <div id="caption"></div>
   </div>
 
@@ -154,8 +183,17 @@
     let current = 0;
 
     const broll = document.getElementById("broll");
-    const nextPreview = document.getElementById("next-preview");
-    const nextLabel = document.getElementById("next-label");
+    const nextStrip = document.getElementById("next-strip");
+    const nextCards = [
+      {
+        element: document.getElementById("next-1"),
+        img: document.querySelector("#next-1 img")
+      },
+      {
+        element: document.getElementById("next-2"),
+        img: document.querySelector("#next-2 img")
+      }
+    ];
     const caption = document.getElementById("caption");
     const background = document.getElementById("background");
 
@@ -203,15 +241,24 @@
       background.src = images[current].src;
       caption.textContent = images[current].caption;
       
-      // Update next preview
-      if (current < images.length - 1) {
-        nextPreview.src = images[current + 1].src;
-        nextPreview.style.opacity = '0.8';
-        nextLabel.style.opacity = '0.8';
-      } else {
-        nextPreview.style.opacity = '0';
-        nextLabel.style.opacity = '0';
+      // Update next previews (next 2 images)
+      let hasNextImages = false;
+      
+      for (let i = 0; i < 2; i++) {
+        const nextIndex = current + i + 1;
+        const card = nextCards[i];
+        
+        if (nextIndex < images.length) {
+          card.img.src = images[nextIndex].src;
+          card.element.style.display = 'block';
+          hasNextImages = true;
+        } else {
+          card.element.style.display = 'none';
+        }
       }
+      
+      // Show/hide the entire strip
+      nextStrip.style.opacity = hasNextImages ? '1' : '0';
       
       // Reset zoom and translation
       currentScale = 1;
@@ -233,7 +280,7 @@
       // Hide current image and text instantly
       broll.style.opacity = '0';
       caption.style.opacity = '0';
-      nextPreview.style.opacity = '0';
+      nextStrip.style.opacity = '0';
       
       // Reset zoom and translation
       currentScale = 1;
