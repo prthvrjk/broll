@@ -1,0 +1,299 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const extensions = ["jpg", "jpeg", "png", "webp"];
+  let images = [];
+  let current = 0;
+
+  const broll = document.getElementById("broll");
+  const nextStrip = document.getElementById("next-strip");
+  const nextCards = [
+    {
+      element: document.getElementById("next-1"),
+      img: document.querySelector("#next-1 img")
+    },
+    {
+      element: document.getElementById("next-2"),
+      img: document.querySelector("#next-2 img")
+    }
+  ];
+  const caption = document.getElementById("caption");
+  const background = document.getElementById("background");
+
+  function checkImage(path) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(path);
+      img.onerror = () => resolve(null);
+      img.src = path;
+    });
+  }
+
+  async function findValidImagePath(baseName) {
+    const cleanName = baseName.replace(/\.[^/.]+$/, ""); // strip extension
+    for (let ext of extensions) {
+      let path = `images/${cleanName}.${ext}`;
+      let valid = await checkImage(path);
+      if (valid) return valid;
+    }
+    return null;
+  }
+
+  async function loadImages() {
+    const res = await fetch("images.json");
+    const raw = await res.json();
+
+    images = (await Promise.all(
+      raw.map(async (item) => {
+        const src = await findValidImagePath(item.name);
+        return src ? { src, caption: item.caption } : null;
+      })
+    )).filter(Boolean);
+
+    updateCarousel();
+  }
+
+  let isTransitioning = false;
+  let slideDirection = 'right'; // Track slide direction
+
+  function updateCarousel() {
+    if (!images.length) return;
+
+    // Update main image and background
+    broll.src = images[current].src;
+    background.src = images[current].src;
+    caption.textContent = images[current].caption;
+
+    // Update next previews (next 2 images)
+    let hasNextImages = false;
+
+    for (let i = 0; i < 2; i++) {
+      const nextIndex = current + i + 1;
+      const card = nextCards[i];
+
+      if (nextIndex < images.length) {
+        card.img.src = images[nextIndex].src;
+        card.element.style.display = 'block';
+        hasNextImages = true;
+      } else {
+        card.element.style.display = 'none';
+      }
+    }
+
+    // Show/hide the entire strip
+    nextStrip.style.opacity = hasNextImages ? '1' : '0';
+
+    // Reset zoom
+    currentScale = 1;
+    broll.style.setProperty('--base-scale', '1');
+    broll.style.transform = "scale(1)";
+    broll.style.transformOrigin = 'center center';
+    broll.style.animation = 'pulse 1.5s ease-in-out infinite';
+
+  }
+
+  function update(direction = 'right') {
+    if (!images.length || isTransitioning) return;
+
+    isTransitioning = true;
+    slideDirection = direction;
+
+    const slideInClass = direction === 'left' ? 'slide-in-right' : 'slide-in-left';
+
+    // Hide current image and text instantly
+    broll.style.opacity = '0';
+    caption.style.opacity = '0';
+    nextStrip.style.opacity = '0';
+
+    // Reset zoom
+    currentScale = 1;
+
+    // Update content after brief delay
+    setTimeout(() => {
+      updateCarousel();
+
+      // Position new image off-screen for slide in
+      broll.classList.add(slideInClass);
+      broll.style.opacity = '1';
+
+      // Slide in new content
+      setTimeout(() => {
+        broll.style.setProperty('--base-scale', '1');
+        broll.style.transform = "scale(1)";
+        broll.style.transformOrigin = 'center center';
+        broll.style.animation = 'pulse 1.5s ease-in-out infinite';
+        broll.classList.remove(slideInClass);
+        caption.style.opacity = '1';
+        caption.style.transform = "translateX(0)";
+        caption.classList.remove(slideInClass);
+        isTransitioning = false;
+      }, 50);
+    }, 200);
+
+  }
+
+  // --- Swipe / pinch detection ---
+  let xDown = null;
+  let yDown = null;
+  let touchCount = 0;
+  let isPinching = false;
+
+  document.addEventListener("touchstart", (e) => {
+    touchCount = e.touches.length;
+    if (touchCount > 1) {
+      isPinching = true;
+    } else {
+      xDown = e.touches[0].clientX;
+      yDown = e.touches[0].clientY;
+    }
+  });
+
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches.length > 1) {
+      isPinching = true;
+    }
+  });
+
+  document.addEventListener("touchend", (e) => {
+    if (isPinching) {
+      isPinching = false;
+      xDown = null;
+      yDown = null;
+      touchCount = 0;
+      return;
+    }
+
+    if (!xDown || !yDown) return;
+
+    let xUp = e.changedTouches[0].clientX;
+    let yUp = e.changedTouches[0].clientY;
+
+    let xDiff = xDown - xUp;
+    let yDiff = yDown - yUp;
+
+    if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 30) {
+      if (xDiff > 0 && current < images.length - 1) {
+        current++;
+        update('left'); // Swipe left (finger goes left) → content comes from right
+      } else if (xDiff < 0 && current > 0) {
+        current--;
+        update('right'); // Swipe right (finger goes right) → content comes from left
+      }
+    }
+
+    xDown = null;
+    yDown = null;
+    touchCount = 0;
+  });
+
+  // --- Pinch zoom for image only ---
+  let currentScale = 1;
+  let isZooming = false;
+
+  broll.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      isZooming = true;
+
+      // Disable pulse animation during zoom
+      broll.style.animation = 'none';
+
+      // Get initial distance and pinch center
+      const initialDistance = getDistance(e.touches[0], e.touches[1]);
+      const pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+      // Get image bounds
+      const rect = broll.getBoundingClientRect();
+
+      // Calculate pinch point relative to the image element
+      const relativeX = (pinchCenterX - rect.left) / rect.width;
+      const relativeY = (pinchCenterY - rect.top) / rect.height;
+
+      // Clamp values to ensure they're within the image bounds
+      const clampedX = Math.max(0, Math.min(1, relativeX));
+      const clampedY = Math.max(0, Math.min(1, relativeY));
+
+      // Convert to percentage for transform-origin
+      const originX = clampedX * 100;
+      const originY = clampedY * 100;
+
+      // Set transform origin to pinch point
+      broll.style.transformOrigin = `${originX}% ${originY}%`;
+
+      // Store initial values
+      broll.dataset.initialDistance = initialDistance;
+      broll.dataset.initialScale = currentScale;
+      broll.dataset.originX = originX;
+      broll.dataset.originY = originY;
+    }
+  }, { passive: false });
+
+  broll.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && isZooming) {
+      e.preventDefault();
+
+      const currentDistance = getDistance(e.touches[0], e.touches[1]);
+      const initialDistance = parseFloat(broll.dataset.initialDistance);
+      const initialScale = parseFloat(broll.dataset.initialScale);
+
+      // Calculate new scale
+      const scaleChange = currentDistance / initialDistance;
+      let newScale = initialScale * scaleChange;
+
+      // Prevent zooming out beyond original size
+      newScale = Math.max(1, newScale);
+
+      // Maintain the pinch point transform origin throughout zoom
+      if (newScale > 1) {
+        const originX = parseFloat(broll.dataset.originX);
+        const originY = parseFloat(broll.dataset.originY);
+        broll.style.transformOrigin = `${originX}% ${originY}%`;
+      } else {
+        // Only reset to center when fully zoomed out
+        broll.style.transformOrigin = 'center center';
+      }
+
+      currentScale = newScale;
+
+      // Apply scale only - let transform-origin handle the positioning
+      broll.style.setProperty('--base-scale', newScale);
+      broll.style.transform = `scale(${newScale})`;
+    }
+  }, { passive: false });
+
+  broll.addEventListener("touchend", (e) => {
+    if (e.touches.length < 2) {
+      isZooming = false;
+
+      // Re-enable pulse animation
+      broll.style.animation = 'pulse 1.5s ease-in-out infinite';
+
+      // Clean up data attributes
+      delete broll.dataset.initialDistance;
+      delete broll.dataset.initialScale;
+      delete broll.dataset.originX;
+      delete broll.dataset.originY;
+    }
+  });
+
+  function getDistance(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  }
+
+  // Keyboard navigation
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "ArrowRight" || e.key === " " || e.key === "Enter") && current < images.length - 1) {
+      current++;
+      update('left'); // Arrow right → content comes from right
+    } else if (e.key === "ArrowLeft" && current > 0) {
+      current--;
+      update('right'); // Arrow left → content comes from left
+    }
+  });
+
+  // Prevent Chrome Ctrl+scroll zoom
+  document.addEventListener("wheel", (e) => {
+    if (e.ctrlKey) e.preventDefault();
+  }, { passive: false });
+
+  loadImages();
+});

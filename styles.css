@@ -1,0 +1,151 @@
+body {
+  margin: 0;
+  background: transparent;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+#wrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center right;
+  filter: blur(15px) brightness(0.4) contrast(1.1);
+  z-index: -2;
+  transition: opacity 0.5s ease;
+  will-change: opacity;
+  transform: translateZ(0); /* Force GPU layer */
+}
+
+#gradient-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(to right, black 0%, black 30%, rgba(0,0,0,0.7) 60%, transparent 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+#broll {
+  position: absolute;
+  left: 0;
+  top: 23vh;
+  width: 80vw;
+  height: 50vh;
+  object-fit: contain;
+  border-radius: 12px;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: scale(1);
+  touch-action: none;
+  animation: pulse 1.5s ease-in-out infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+#next-strip {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 100;
+  transition: opacity 0.4s ease;
+}
+
+.next-card {
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.next-card:hover {
+  transform: scale(1.05);
+}
+
+.next-card img {
+  width: 176px;
+  height: 99px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  filter: brightness(0.7);
+  transition: all 0.4s ease;
+}
+
+.next-card:hover img {
+  filter: brightness(1);
+}
+
+#next-1 {
+  opacity: 1;
+}
+
+#next-1 img {
+  filter: brightness(1);
+}
+
+#next-2 {
+  opacity: 0.8;
+}
+
+.next-label {
+  position: absolute;
+  top: -25px;
+  left: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  z-index: 1;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(var(--base-scale, 1));
+  }
+  50% {
+    transform: scale(calc(var(--base-scale, 1) * 1.02));
+  }
+}
+
+#caption {
+  position: absolute;
+  top: 20px;
+  left: 5px;
+  font-size: 70px;
+  font-weight: 900;
+  color: white;
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  -webkit-text-stroke: 3px black;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 10; /* stays above image */
+}
+
+.slide-out-left {
+  transform: translateX(-100vw) !important;
+}
+
+.slide-out-right {
+  transform: translateX(100vw) !important;
+}
+
+.slide-in-left {
+  transform: translateX(-100vw) !important;
+}
+
+.slide-in-right {
+  transform: translateX(100vw) !important;
+}
