@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const animationRounds = 2;
   const extensions = ["jpg", "jpeg", "png", "webp"];
   let images = [];
   let current = 0;
@@ -17,6 +18,19 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   const caption = document.getElementById("caption");
   const background = document.getElementById("background");
+  const ratingContainer = document.getElementById("rating-container");
+  const ratingSpinner = document.getElementById("rating-spinner");
+  const ratingHyphen = document.getElementById("rating-hyphen");
+  const showRatingBtn = document.getElementById("show-rating-btn");
+
+  // Populate rating spinner
+  const totalDigitsForAnimation = (animationRounds + 1) * 11;
+  for (let i = 0; i < totalDigitsForAnimation; i++) {
+    const digit = document.createElement("div");
+    digit.classList.add("rating-digit");
+    digit.textContent = i % 11;
+    ratingSpinner.appendChild(digit);
+  }
 
   function checkImage(path) {
     return new Promise((resolve) => {
@@ -44,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
     images = (await Promise.all(
       raw.map(async (item) => {
         const src = await findValidImagePath(item.name);
-        return src ? { src, caption: item.caption } : null;
+        return src ? { src, caption: item.caption, rating: item.rating } : null;
       })
     )).filter(Boolean);
 
@@ -93,6 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function update(direction = 'right') {
     if (!images.length || isTransitioning) return;
 
+    ratingContainer.style.display = "none";
+    showRatingBtn.textContent = "Show Rating"; // Reset button text
     isTransitioning = true;
     slideDirection = direction;
 
@@ -294,6 +310,36 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("wheel", (e) => {
     if (e.ctrlKey) e.preventDefault();
   }, { passive: false });
+
+  showRatingBtn.addEventListener("click", () => {
+    if (ratingContainer.style.display === "none") {
+      // Show rating
+      ratingContainer.style.display = "flex";
+      showRatingBtn.textContent = "Hide Rating";
+
+      // Animation
+      const ratingValue = images[current].rating;
+      const digitHeight = 70;
+      const totalDigits = 11;
+
+      // 1. Reset to 0
+      ratingSpinner.style.transition = 'none';
+      ratingSpinner.style.transform = `translateY(0px)`;
+
+      requestAnimationFrame(() => {
+        const finalPosition = -((animationRounds * totalDigits * digitHeight) + (ratingValue * digitHeight));
+        const duration = 2 + animationRounds; // Adjust duration based on rounds
+
+        ratingSpinner.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
+        ratingSpinner.style.transform = `translateY(${finalPosition}px)`;
+      });
+
+    } else {
+      // Hide rating
+      ratingContainer.style.display = "none";
+      showRatingBtn.textContent = "Show Rating";
+    }
+  });
 
   loadImages();
 });
