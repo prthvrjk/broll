@@ -66,6 +66,9 @@ body {
   border-radius: 12px;
   transform: scale(1);
   transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 #next-strip {
@@ -233,7 +236,7 @@ body {
 #show-rating-btn {
   position: fixed;
   bottom: 30px;
-  right: 30px;
+  right: 150px;
   padding: 40px 80px;
   font-size: 64px;
   font-weight: bold;
@@ -247,6 +250,39 @@ body {
 
 #show-rating-btn:hover {
   background-color: #0056b3;
+}
+
+#prev-btn, #next-btn {
+  position: fixed;
+  bottom: 30px;
+  padding: 40px 30px;
+  font-size: 64px;
+  font-weight: bold;
+  color: white;
+  background-color: #28a745;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  z-index: 1002;
+  user-select: none;
+}
+
+#prev-btn {
+  right: 470px;
+}
+
+#next-btn {
+  right: 30px;
+}
+
+#prev-btn:hover, #next-btn:hover {
+  background-color: #1e7e34;
+}
+
+#prev-btn:disabled, #next-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .slide-out-left {
