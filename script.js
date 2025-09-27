@@ -98,6 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show/hide the entire strip
     nextStrip.style.opacity = hasNextImages ? '1' : '0';
 
+    // Update rating button text
+    const currentRating = images[current].rating;
+    showRatingBtn.textContent = `Show Rating (${currentRating})`;
+
     // Reset zoom
     currentScale = 1;
     broll.style.setProperty('--base-scale', '1');
@@ -111,7 +115,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!images.length || isTransitioning) return;
 
     ratingContainer.style.display = "none";
-    showRatingBtn.textContent = "Show Rating"; // Reset button text
     isTransitioning = true;
     slideDirection = direction;
 
@@ -315,7 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, { passive: false });
 
   showRatingBtn.addEventListener("click", () => {
-    if (showRatingBtn.textContent === "Show Rating") {
+    if (showRatingBtn.textContent.startsWith("Show Rating")) {
       // Show rating
       ratingContainer.style.display = "flex";
       showRatingBtn.textContent = "Hide Rating";
@@ -340,7 +343,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       // Hide rating
       ratingContainer.style.display = "none";
-      showRatingBtn.textContent = "Show Rating";
+      const currentRating = images[current].rating;
+      showRatingBtn.textContent = `Show Rating (${currentRating})`;
     }
   });
 
