@@ -25,8 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const ratingSpinner = document.getElementById("rating-spinner");
   const ratingHyphen = document.getElementById("rating-hyphen");
   const showRatingBtn = document.getElementById("show-rating-btn");
-  const prevBtn = document.getElementById("prev-btn");
-  const nextBtn = document.getElementById("next-btn");
 
   // Populate rating spinner
   const totalDigitsForAnimation = (animationRounds + 1) * 11;
@@ -143,10 +141,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Update rating button text
     showRatingBtn.textContent = "SHOW";
 
-    // Update navigation button states
-    prevBtn.disabled = (current === 0);
-    nextBtn.disabled = (current === images.length - 1);
-
     // Reset zoom and position
     currentScale = 1;
     currentTranslateX = 0;
@@ -205,20 +199,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  // --- Pinch zoom and drag for image ---
+  // --- Pinch zoom for image ---
   let currentScale = 1;
   let isZooming = false;
-  let isDragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
   let currentTranslateX = 0;
   let currentTranslateY = 0;
+
+  // Touch variables for swipe detection
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let swipeThreshold = 50; // Minimum distance for a swipe
+  let swipeTimeThreshold = 300; // Maximum time for a swipe (ms)
+  let touchStartTime = 0;
 
   brollContainer.addEventListener("touchstart", (e) => {
     if (e.touches.length === 2) {
       e.preventDefault();
       isZooming = true;
-      isDragging = false; // Stop any drag when starting zoom
 
       // Disable pulse animation during zoom
       brollContainer.style.animation = 'none';
@@ -256,20 +253,10 @@ document.addEventListener("DOMContentLoaded", () => {
       broll.dataset.originX = originX;
       broll.dataset.originY = originY;
     } else if (e.touches.length === 1) {
-      // Single finger drag
-      isDragging = true;
-      isZooming = false;
-
-      dragStartX = e.touches[0].clientX;
-      dragStartY = e.touches[0].clientY;
-
-      // Allow image to break out of container during drag
-      brollContainer.style.overflow = 'visible';
-      brollContainer.style.zIndex = '1000';
-
-      // Disable pulse animation and transitions during drag for immediate response
-      brollContainer.style.animation = 'none';
-      broll.style.transition = 'none';
+      // Single finger touch for swipe detection
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
     }
   }, { passive: false });
 
@@ -309,24 +296,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // Apply scale and translation to the image
       broll.style.setProperty('--base-scale', newScale);
       broll.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${newScale})`;
-    } else if (e.touches.length === 1 && isDragging) {
-      e.preventDefault();
-
-      // Calculate drag distance
-      const deltaX = e.touches[0].clientX - dragStartX;
-      const deltaY = e.touches[0].clientY - dragStartY;
-
-      // Update current translation
-      currentTranslateX += deltaX;
-      currentTranslateY += deltaY;
-
-      // Use translate3d for hardware acceleration and avoid recomposition
-      broll.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`;
-
-      // Update drag start position for next move
-      dragStartX = e.touches[0].clientX;
-      dragStartY = e.touches[0].clientY;
     }
+    // Removed single finger drag functionality - now handled by swipe detection
   }, { passive: false });
 
   brollContainer.addEventListener("touchend", (e) => {
@@ -335,7 +306,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (e.touches.length === 0) {
-      isDragging = false;
+      // Handle swipe detection for single finger gestures
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const touchEndTime = Date.now();
+
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchStartY - touchEndY; // Note: Y is flipped for intuitive direction
+      const deltaTime = touchEndTime - touchStartTime;
+
+      // Check if this was a swipe gesture
+      const isSwipe = Math.abs(deltaX) > swipeThreshold && deltaTime < swipeTimeThreshold;
+      const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+
+      if (isSwipe && isHorizontalSwipe && !isTransitioning) {
+        if (deltaX > 0 && current > 0) {
+          // Swipe right - go to previous image
+          current--;
+          update('right');
+        } else if (deltaX < 0 && current < images.length - 1) {
+          // Swipe left - go to next image
+          current++;
+          update('left');
+        }
+      }
 
       // Re-enable pulse animation and transitions
       brollContainer.style.animation = 'pulse 1.15s ease-in-out infinite';
@@ -416,20 +410,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Navigation button event listeners
-  prevBtn.addEventListener("click", () => {
-    if (current > 0) {
-      current--;
-      update('right');
-    }
-  });
-
-  nextBtn.addEventListener("click", () => {
-    if (current < images.length - 1) {
-      current++;
-      update('left');
-    }
-  });
 
   loadImages();
 });
