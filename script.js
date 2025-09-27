@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const animationRounds = 2;
+  const animationRounds = 0;
   const extensions = ["jpg", "jpeg", "png", "webp"];
   let images = [];
   let current = 0;
@@ -9,11 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const nextCards = [
     {
       element: document.getElementById("next-1"),
-      img: document.querySelector("#next-1 img")
+      img: document.querySelector("#next-1 img"),
+      title: document.querySelector("#next-1 .next-title")
     },
     {
       element: document.getElementById("next-2"),
-      img: document.querySelector("#next-2 img")
+      img: document.querySelector("#next-2 img"),
+      title: document.querySelector("#next-2 .next-title")
     }
   ];
   const caption = document.getElementById("caption");
@@ -85,6 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (nextIndex < images.length) {
         card.img.src = images[nextIndex].src;
+        card.title.textContent = images[nextIndex].caption;
         card.element.style.display = 'block';
         hasNextImages = true;
       } else {
@@ -100,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     broll.style.setProperty('--base-scale', '1');
     broll.style.transform = "scale(1)";
     broll.style.transformOrigin = 'center center';
-    broll.style.animation = 'pulse 1.5s ease-in-out infinite';
+    broll.style.animation = 'pulse 1.15s ease-in-out infinite';
 
   }
 
@@ -135,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
         broll.style.setProperty('--base-scale', '1');
         broll.style.transform = "scale(1)";
         broll.style.transformOrigin = 'center center';
-        broll.style.animation = 'pulse 1.5s ease-in-out infinite';
+        broll.style.animation = 'pulse 1.15s ease-in-out infinite';
         broll.classList.remove(slideInClass);
         caption.style.opacity = '1';
         caption.style.transform = "translateX(0)";
@@ -281,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
       isZooming = false;
 
       // Re-enable pulse animation
-      broll.style.animation = 'pulse 1.5s ease-in-out infinite';
+      broll.style.animation = 'pulse 1.15s ease-in-out infinite';
 
       // Clean up data attributes
       delete broll.dataset.initialDistance;
@@ -312,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, { passive: false });
 
   showRatingBtn.addEventListener("click", () => {
-    if (ratingContainer.style.display === "none") {
+    if (showRatingBtn.textContent === "Show Rating") {
       // Show rating
       ratingContainer.style.display = "flex";
       showRatingBtn.textContent = "Hide Rating";
@@ -326,13 +329,13 @@ document.addEventListener("DOMContentLoaded", () => {
       ratingSpinner.style.transition = 'none';
       ratingSpinner.style.transform = `translateY(0px)`;
 
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         const finalPosition = -((animationRounds * totalDigits * digitHeight) + (ratingValue * digitHeight));
         const duration = 2 + animationRounds; // Adjust duration based on rounds
 
         ratingSpinner.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
         ratingSpinner.style.transform = `translateY(${finalPosition}px)`;
-      });
+      }, 10);
 
     } else {
       // Hide rating

@@ -1,3 +1,9 @@
+:root {
+  --center-image-left: 120px;
+  --next-strip-bottom: 30px;
+  --next-strip-left: 310px;
+}
+
 body {
   margin: 0;
   background: transparent;
@@ -40,24 +46,24 @@ body {
 
 #broll {
   position: absolute;
-  left: 0;
+  left: var(--center-image-left);
   top: 23vh;
-  width: 80vw;
+  max-width: 80vw;
   height: 50vh;
   object-fit: contain;
   border-radius: 12px;
   transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   transform: scale(1);
   touch-action: none;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: pulse 1.15s ease-in-out infinite;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 #next-strip {
   position: fixed;
-  bottom: 30px;
-  left: 50%;
+  bottom: var(--next-strip-bottom);
+  left: var(--next-strip-left);
   transform: translateX(-50%);
   display: flex;
   gap: 20px;
@@ -112,6 +118,26 @@ body {
   z-index: 1;
 }
 
+.next-title {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  z-index: 2;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
 @keyframes pulse {
   0%, 100% {
     transform: scale(var(--base-scale, 1));
@@ -145,8 +171,16 @@ body {
   margin-left: 20px;
 }
 
-#rating-hyphen, #rating-suffix {
+#rating-hyphen {
   font-size: 70px;
+  font-weight: 900;
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  color: #ffc107;
+  margin-right: 5px;
+}
+
+#rating-suffix {
+  font-size: 30px;
   font-weight: 900;
   font-family: 'Montserrat', 'Segoe UI', sans-serif;
   color: #ffc107;
@@ -174,13 +208,13 @@ body {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  padding: 10px 20px;
-  font-size: 16px;
+  padding: 20px 40px;
+  font-size: 32px;
   font-weight: bold;
   color: white;
   background-color: #007bff;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
   z-index: 100;
 }
