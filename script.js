@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let images = [];
   let current = 0;
 
+  const brollContainer = document.getElementById("broll-container");
   const broll = document.getElementById("broll");
   const nextStrip = document.getElementById("next-strip");
   const nextCards = [
@@ -18,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
       title: document.querySelector("#next-2 .next-title")
     }
   ];
-  const caption = document.getElementById("caption");
+  const mainCaption = document.getElementById("main-caption");
   const background = document.getElementById("background");
   const ratingContainer = document.getElementById("rating-container");
   const ratingSpinner = document.getElementById("rating-spinner");
@@ -70,13 +71,52 @@ document.addEventListener("DOMContentLoaded", () => {
   let isTransitioning = false;
   let slideDirection = 'right'; // Track slide direction
 
-  function updateCarousel() {
+  function calculateImageDimensions() {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        // Use viewport-based max dimensions (restored to original size)
+        const maxWidth = window.innerWidth * 0.8; // 80vw
+        const maxHeight = window.innerHeight * 0.65; // 65vh
+
+        // Calculate the actual rendered size with object-fit: contain
+        const imageAspectRatio = img.naturalWidth / img.naturalHeight;
+        const maxAspectRatio = maxWidth / maxHeight;
+
+        let renderedWidth, renderedHeight;
+
+        if (imageAspectRatio > maxAspectRatio) {
+          // Image is wider than max ratio - width constrained
+          renderedWidth = maxWidth;
+          renderedHeight = maxWidth / imageAspectRatio;
+        } else {
+          // Image is taller than max ratio - height constrained
+          renderedHeight = maxHeight;
+          renderedWidth = maxHeight * imageAspectRatio;
+        }
+
+        resolve({ width: renderedWidth, height: renderedHeight });
+      };
+      img.src = images[current].src;
+    });
+  }
+
+  async function updateCarousel() {
     if (!images.length) return;
 
     // Update main image and background
     broll.src = images[current].src;
     background.src = images[current].src;
-    caption.textContent = images[current].caption;
+    mainCaption.textContent = images[current].caption;
+
+    // Calculate and set container size to match image
+    try {
+      const imageDimensions = await calculateImageDimensions();
+      brollContainer.style.width = `${imageDimensions.width}px`;
+      brollContainer.style.height = `${imageDimensions.height}px`;
+    } catch (error) {
+      console.log('Could not calculate image dimensions, using defaults');
+    }
 
     // Update next previews (next 2 images)
     let hasNextImages = false;
@@ -99,15 +139,18 @@ document.addEventListener("DOMContentLoaded", () => {
     nextStrip.style.opacity = hasNextImages ? '1' : '0';
 
     // Update rating button text
-    const currentRating = images[current].rating;
-    showRatingBtn.textContent = `Show Rating (${currentRating})`;
+    showRatingBtn.textContent = "SHOW";
 
     // Reset zoom
     currentScale = 1;
     broll.style.setProperty('--base-scale', '1');
     broll.style.transform = "scale(1)";
     broll.style.transformOrigin = 'center center';
-    broll.style.animation = 'pulse 1.15s ease-in-out infinite';
+    brollContainer.style.animation = 'pulse 1.15s ease-in-out infinite';
+
+    // Reset container overflow when scale returns to 1
+    brollContainer.style.overflow = 'hidden';
+    brollContainer.style.zIndex = 'auto';
 
   }
 
@@ -121,8 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const slideInClass = direction === 'left' ? 'slide-in-right' : 'slide-in-left';
 
     // Hide current image and text instantly
-    broll.style.opacity = '0';
-    caption.style.opacity = '0';
+    brollContainer.style.opacity = '0';
     nextStrip.style.opacity = '0';
 
     // Reset zoom
@@ -132,20 +174,22 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       updateCarousel();
 
-      // Position new image off-screen for slide in
-      broll.classList.add(slideInClass);
-      broll.style.opacity = '1';
+      // Position new container off-screen for slide in
+      brollContainer.classList.add(slideInClass);
+      brollContainer.style.opacity = '1';
 
       // Slide in new content
       setTimeout(() => {
         broll.style.setProperty('--base-scale', '1');
         broll.style.transform = "scale(1)";
         broll.style.transformOrigin = 'center center';
-        broll.style.animation = 'pulse 1.15s ease-in-out infinite';
-        broll.classList.remove(slideInClass);
-        caption.style.opacity = '1';
-        caption.style.transform = "translateX(0)";
-        caption.classList.remove(slideInClass);
+        brollContainer.style.animation = 'pulse 1.15s ease-in-out infinite';
+        brollContainer.classList.remove(slideInClass);
+
+        // Reset container overflow when transitioning
+        brollContainer.style.overflow = 'hidden';
+        brollContainer.style.zIndex = 'auto';
+
         isTransitioning = false;
       }, 50);
     }, 200);
@@ -210,20 +254,24 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentScale = 1;
   let isZooming = false;
 
-  broll.addEventListener("touchstart", (e) => {
+  brollContainer.addEventListener("touchstart", (e) => {
     if (e.touches.length === 2) {
       e.preventDefault();
       isZooming = true;
 
       // Disable pulse animation during zoom
-      broll.style.animation = 'none';
+      brollContainer.style.animation = 'none';
+
+      // Allow image to break out of container during zoom
+      brollContainer.style.overflow = 'visible';
+      brollContainer.style.zIndex = '1000';
 
       // Get initial distance and pinch center
       const initialDistance = getDistance(e.touches[0], e.touches[1]);
       const pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 
-      // Get image bounds
+      // Get image bounds (not container)
       const rect = broll.getBoundingClientRect();
 
       // Calculate pinch point relative to the image element
@@ -249,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, { passive: false });
 
-  broll.addEventListener("touchmove", (e) => {
+  brollContainer.addEventListener("touchmove", (e) => {
     if (e.touches.length === 2 && isZooming) {
       e.preventDefault();
 
@@ -276,18 +324,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       currentScale = newScale;
 
-      // Apply scale only - let transform-origin handle the positioning
+      // Apply scale only to the image - let transform-origin handle the positioning
       broll.style.setProperty('--base-scale', newScale);
       broll.style.transform = `scale(${newScale})`;
     }
   }, { passive: false });
 
-  broll.addEventListener("touchend", (e) => {
+  brollContainer.addEventListener("touchend", (e) => {
     if (e.touches.length < 2) {
       isZooming = false;
 
       // Re-enable pulse animation
-      broll.style.animation = 'pulse 1.15s ease-in-out infinite';
+      brollContainer.style.animation = 'pulse 1.15s ease-in-out infinite';
+
+      // Only reset container overflow if image is back to normal scale
+      if (currentScale <= 1) {
+        brollContainer.style.overflow = 'hidden';
+        brollContainer.style.zIndex = 'auto';
+      }
 
       // Clean up data attributes
       delete broll.dataset.initialDistance;
@@ -317,11 +371,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.ctrlKey) e.preventDefault();
   }, { passive: false });
 
+  // Handle window resize to recalculate container dimensions
+  let resizeTimeout;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (images.length > 0) {
+        updateCarousel();
+      }
+    }, 100);
+  });
+
   showRatingBtn.addEventListener("click", () => {
-    if (showRatingBtn.textContent.startsWith("Show Rating")) {
+    if (showRatingBtn.textContent === "SHOW") {
       // Show rating
       ratingContainer.style.display = "flex";
-      showRatingBtn.textContent = "Hide Rating";
+      showRatingBtn.textContent = "HIDE";
 
       // Animation
       const ratingValue = images[current].rating;
@@ -343,8 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       // Hide rating
       ratingContainer.style.display = "none";
-      const currentRating = images[current].rating;
-      showRatingBtn.textContent = `Show Rating (${currentRating})`;
+      showRatingBtn.textContent = "SHOW";
     }
   });
 

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Option 1: Bottom Overlay</title>
+    <style>
+        body { margin: 0; background: #222; color: white; font-family: 'Segoe UI', sans-serif; }
+        .demo-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        .main-image {
+            position: absolute;
+            left: 120px;
+            top: 5vh;
+            width: 80vw;
+            height: 70vh;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+        .caption-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.7), transparent);
+            padding: 30px 20px 20px 20px;
+            border-radius: 0 0 12px 12px;
+            z-index: 10;
+        }
+        .caption-text {
+            font-size: 42px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+        }
+        .rating-display {
+            font-size: 24px;
+            color: #ffc107;
+            font-weight: 700;
+        }
+        .next-cards {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        .next-card img {
+            width: 250px;
+            height: 180px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .demo-label {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #007bff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-label">Option 1: Bottom Overlay</div>
+        <img class="main-image" src="images/1.jpg" alt="Main Image">
+        <div class="caption-overlay">
+            <div class="caption-text">The Future of Technology and Innovation in Modern Society</div>
+            <div class="rating-display">★ Rating: 8.5/10</div>
+        </div>
+        <div class="next-cards">
+            <div class="next-card"><img src="images/2.jpg" alt="Next 1"></div>
+            <div class="next-card"><img src="images/3.png" alt="Next 2"></div>
+        </div>
+    </div>
+</body>
+</html>

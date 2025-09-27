@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Option 3: Side Panel</title>
+    <style>
+        body { margin: 0; background: #222; color: white; font-family: 'Segoe UI', sans-serif; }
+        .demo-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        .main-image {
+            position: absolute;
+            left: 350px;
+            top: 5vh;
+            width: calc(100vw - 400px);
+            height: 75vh;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+        .side-panel {
+            position: absolute;
+            left: 20px;
+            top: 5vh;
+            width: 300px;
+            height: 75vh;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(20,20,20,0.9));
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .caption-text {
+            font-size: 42px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+        .rating-section {
+            padding: 20px 0;
+        }
+        .rating-display {
+            font-size: 32px;
+            color: #ffc107;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .show-rating-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .next-cards {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        .next-card img {
+            width: 280px;
+            height: 200px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .demo-label {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-label">Option 3: Side Panel</div>
+        <div class="side-panel">
+            <div>
+                <div class="caption-text">The Future of Technology and Innovation in Modern Society</div>
+            </div>
+            <div class="rating-section">
+                <div class="rating-display">★ Rating: 8.5/10</div>
+                <button class="show-rating-btn">Show Counter (8.5)</button>
+            </div>
+        </div>
+        <img class="main-image" src="images/1.jpg" alt="Main Image">
+        <div class="next-cards">
+            <div class="next-card"><img src="images/2.jpg" alt="Next 1"></div>
+            <div class="next-card"><img src="images/3.png" alt="Next 2"></div>
+        </div>
+    </div>
+</body>
+</html>

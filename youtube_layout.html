@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Layout: Left 60% Optimized</title>
+    <style>
+        body { margin: 0; background: #111; color: white; font-family: 'Segoe UI', sans-serif; }
+        .youtube-container {
+            position: relative;
+            width: 60vw; /* Only use left 60% */
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+        }
+
+        /* Reserve right 40% with visual indicator */
+        .presenter-area {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 40vw;
+            height: 100vh;
+            background: rgba(0,100,200,0.1);
+            border-left: 2px dashed rgba(0,100,200,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 24px;
+            text-align: center;
+        }
+
+        /* Main broll image - maximized in available space */
+        .main-image {
+            position: absolute;
+            left: 20px;
+            top: 80px;
+            width: calc(60vw - 40px);
+            height: 65vh;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        /* Top overlay for title */
+        .title-overlay {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(30,30,30,0.8));
+            padding: 15px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .title-text {
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        /* Bottom section for next cards */
+        .bottom-section {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .next-cards {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .next-card {
+            position: relative;
+            flex: 1;
+        }
+
+        .next-card img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            filter: brightness(0.8);
+        }
+
+        .next-card:hover img {
+            filter: brightness(1);
+        }
+
+        .next-title {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            right: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 2px 4px;
+            border-radius: 0 0 6px 6px;
+            line-height: 1.1;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        /* Rating button positioned strategically */
+        .rating-section {
+            margin-left: 10px;
+        }
+
+        .show-rating-btn {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+        }
+
+        .show-rating-btn:hover {
+            background: #e55a2b;
+            transform: translateY(-1px);
+        }
+
+        /* Rating display area */
+        .rating-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(15px);
+            border: 2px solid #ff6b35;
+            display: none;
+            text-align: center;
+        }
+
+        .rating-number {
+            font-size: 48px;
+            font-weight: 900;
+            color: #ff6b35;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .demo-label {
+            position: fixed;
+            top: 20px;
+            right: calc(40vw + 20px);
+            background: #ff6b35;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="youtube-container">
+        <div class="demo-label">YouTube Optimized</div>
+
+        <div class="title-overlay">
+            <h1 class="title-text">5. Pavan Kalyan - The Hero</h1>
+        </div>
+
+        <img class="main-image" src="images/1.jpg" alt="Main Content">
+
+        <div class="bottom-section">
+            <div class="next-cards">
+                <div class="next-card">
+                    <img src="images/2.jpg" alt="Next 1">
+                    <div class="next-title">6. Random Facts - OG Game</div>
+                </div>
+                <div class="next-card">
+                    <img src="images/3.png" alt="Next 2">
+                    <div class="next-title">7. Random Facts - Simbu Song</div>
+                </div>
+            </div>
+
+            <div class="rating-section">
+                <button class="show-rating-btn">Show Rating (8.5)</button>
+            </div>
+        </div>
+
+        <div class="rating-display">
+            <div class="rating-number">8.5</div>
+        </div>
+    </div>
+
+    <!-- Visual indicator for presenter area -->
+    <div class="presenter-area">
+        <div>
+            <strong>Presenter Area</strong><br>
+            (40% width reserved)<br>
+            Your webcam goes here
+        </div>
+    </div>
+</body>
+</html>
