@@ -77,9 +77,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        // Use viewport-based max dimensions (restored to original size)
-        const maxWidth = window.innerWidth * 0.8; // 80vw
-        const maxHeight = window.innerHeight * 0.65; // 65vh
+        // Use available space after left sidebar
+        const maxWidth = window.innerWidth - 280; // Full width minus sidebar (220px + 30px gap + 30px margin)
+        const maxHeight = window.innerHeight - 40; // Full height minus top/bottom margins
 
         // Calculate the actual rendered size with object-fit: contain
         const imageAspectRatio = img.naturalWidth / img.naturalHeight;
