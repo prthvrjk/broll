@@ -255,12 +255,12 @@ body {
 
 #image-thumbnails {
   position: fixed;
-  bottom: 140px; /* Above the show button */
+  bottom: 200px; /* More margin above the show button */
   right: 30px;
   display: flex;
   flex-direction: row;
   gap: 10px;
-  z-index: 1002;
+  z-index: 1003;
 }
 
 .thumbnail-item {

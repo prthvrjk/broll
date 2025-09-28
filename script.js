@@ -42,13 +42,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const showRatingBtn = document.getElementById("show-rating-btn");
   const thumbnailContainer = document.getElementById("image-thumbnails");
 
-  // Populate rating spinner
-  const totalDigitsForAnimation = (animationRounds + 1) * 11;
-  for (let i = 0; i < totalDigitsForAnimation; i++) {
-    const digit = document.createElement("div");
-    digit.classList.add("rating-digit");
-    digit.textContent = i % 11;
-    ratingSpinner.appendChild(digit);
+  // Will be populated after loading images to include any decimal ratings
+  let ratingValues = [];
+
+  function populateRatingSpinner(targetRating) {
+    // Clear existing digits
+    ratingSpinner.innerHTML = '';
+
+    // Always start with base ratings (0-10)
+    ratingValues = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // If target rating is decimal (.5), insert it in the correct position
+    if (targetRating % 1 === 0.5) {
+      const insertIndex = Math.ceil(targetRating); // e.g., 6.5 -> insert at index 7 (after 6)
+      ratingValues.splice(insertIndex, 0, targetRating);
+    }
+
+    // Populate spinner with rating values
+    const totalDigitsForAnimation = (animationRounds + 1) * ratingValues.length;
+    for (let i = 0; i < totalDigitsForAnimation; i++) {
+      const digit = document.createElement("div");
+      digit.classList.add("rating-digit");
+      digit.textContent = ratingValues[i % ratingValues.length];
+      ratingSpinner.appendChild(digit);
+    }
   }
 
   function checkImage(path) {
@@ -104,6 +121,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return null;
       })
     )).filter(Boolean);
+
+    // Initial population with base ratings only (will be rebuilt when showing rating)
+    populateRatingSpinner(0);
 
     updateCarousel();
 
@@ -624,14 +644,24 @@ document.addEventListener("DOMContentLoaded", () => {
       // Animation
       const ratingValue = images[current].rating;
       const digitHeight = 210;
-      const totalDigits = 11;
+
+      // Rebuild spinner for this specific rating (includes .5 if needed)
+      populateRatingSpinner(ratingValue);
 
       // 1. Reset to 0
       ratingSpinner.style.transition = 'none';
       ratingSpinner.style.transform = `translateY(0px)`;
 
       setTimeout(() => {
-        const finalPosition = -((animationRounds * totalDigits * digitHeight) + (ratingValue * digitHeight));
+        // Find the index of the rating value in our array
+        const ratingIndex = ratingValues.indexOf(ratingValue);
+        if (ratingIndex === -1) {
+          console.warn(`Rating ${ratingValue} not found in rating values array`);
+          return;
+        }
+
+        // Calculate position based on the index in the rating values array
+        const finalPosition = -((animationRounds * ratingValues.length * digitHeight) + (ratingIndex * digitHeight));
         const duration = 2 + animationRounds; // Adjust duration based on rounds
 
         ratingSpinner.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
