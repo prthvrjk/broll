@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const ratingSpinner = document.getElementById("rating-spinner");
   const ratingHyphen = document.getElementById("rating-hyphen");
   const showRatingBtn = document.getElementById("show-rating-btn");
+  const thumbnailContainer = document.getElementById("image-thumbnails");
 
   // Populate rating spinner
   const totalDigitsForAnimation = (animationRounds + 1) * 11;
@@ -69,14 +70,38 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
+  async function findValidImagesForPoint(nameOrArray) {
+    if (Array.isArray(nameOrArray)) {
+      // Handle multiple images
+      const validImages = [];
+      for (let name of nameOrArray) {
+        const path = await findValidImagePath(name);
+        if (path) validImages.push(path);
+      }
+      return validImages.length > 0 ? validImages : null;
+    } else {
+      // Handle single image (backward compatibility)
+      const path = await findValidImagePath(nameOrArray);
+      return path ? [path] : null;
+    }
+  }
+
   async function loadImages() {
     const res = await fetch("images.json");
     const raw = await res.json();
 
     images = (await Promise.all(
       raw.map(async (item) => {
-        const src = await findValidImagePath(item.name);
-        return src ? { src, caption: item.caption, rating: item.rating } : null;
+        const imagePaths = await findValidImagesForPoint(item.name);
+        if (imagePaths) {
+          return {
+            images: imagePaths,
+            currentImageIndex: 0, // Track which image is currently displayed
+            caption: item.caption,
+            rating: item.rating
+          };
+        }
+        return null;
       })
     )).filter(Boolean);
 
@@ -115,17 +140,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         resolve({ width: renderedWidth, height: renderedHeight });
       };
-      img.src = images[current].src;
+      img.src = images[current].images[images[current].currentImageIndex];
     });
   }
 
   async function updateCarousel() {
     if (!images.length) return;
 
+    const currentPoint = images[current];
+    const currentImageSrc = currentPoint.images[currentPoint.currentImageIndex];
+
     // Update main image and background
-    broll.src = images[current].src;
-    background.src = images[current].src;
-    mainCaption.textContent = images[current].caption;
+    broll.src = currentImageSrc;
+    background.src = currentImageSrc;
+    mainCaption.textContent = currentPoint.caption;
+
+    // Update thumbnails
+    updateThumbnails();
 
     // Calculate and set container size to match image
     try {
@@ -147,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
     nextStrip.style.opacity = hasNextImages ? '1' : '0';
 
     // Update rating button text with current image rating
-    const currentRating = images[current].rating;
+    const currentRating = currentPoint.rating;
     showRatingBtn.textContent = `SHOW(${currentRating})`;
 
     // Reset zoom
@@ -164,6 +195,52 @@ document.addEventListener("DOMContentLoaded", () => {
     // Main image changed - next strip continues independently (no reset)
     console.log("📱 Main image changed - next strip continues independently");
 
+  }
+
+  function updateThumbnails() {
+    const currentPoint = images[current];
+
+    // Clear existing thumbnails
+    thumbnailContainer.innerHTML = '';
+
+    // Only show thumbnails if there are multiple images for this point
+    if (currentPoint.images.length <= 1) {
+      return;
+    }
+
+    // Create thumbnails for all images except the currently displayed one
+    currentPoint.images.forEach((imageSrc, index) => {
+      if (index !== currentPoint.currentImageIndex) {
+        const thumbnail = document.createElement('img');
+        thumbnail.src = imageSrc;
+        thumbnail.className = 'thumbnail-item';
+        thumbnail.dataset.imageIndex = index;
+
+        // Add click handler for swapping
+        thumbnail.addEventListener('click', () => swapImage(index));
+
+        thumbnailContainer.appendChild(thumbnail);
+      }
+    });
+  }
+
+  function swapImage(thumbnailIndex) {
+    const currentPoint = images[current];
+    const currentMainIndex = currentPoint.currentImageIndex;
+    const thumbnailSrc = currentPoint.images[thumbnailIndex];
+    const mainSrc = currentPoint.images[currentMainIndex];
+
+    // Swap the images
+    currentPoint.currentImageIndex = thumbnailIndex;
+
+    // Update main image immediately
+    broll.src = thumbnailSrc;
+    background.src = thumbnailSrc;
+
+    // Update thumbnails to reflect the change
+    updateThumbnails();
+
+    console.log(`🔄 Swapped image: thumbnail #${thumbnailIndex + 1} is now main, previous main #${currentMainIndex + 1} is now thumbnail`);
   }
 
   function update(direction = 'right') {
@@ -221,9 +298,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Direct update without any transitions - completely static
-    nextCards[0].img.src = images[card1Index].src;
+    nextCards[0].img.src = images[card1Index].images[images[card1Index].currentImageIndex];
     nextCards[0].title.textContent = images[card1Index].caption;
-    nextCards[1].img.src = images[card2Index].src;
+    nextCards[1].img.src = images[card2Index].images[images[card2Index].currentImageIndex];
     nextCards[1].title.textContent = images[card2Index].caption;
   }
 
@@ -283,7 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function moveCardToFirstPosition(card, imageIndex) {
     // For now: instant move to first position with new content
     // Future: add sliding transition here
-    card.img.src = images[imageIndex].src;
+    card.img.src = images[imageIndex].images[images[imageIndex].currentImageIndex];
     card.title.textContent = images[imageIndex].caption;
     card.element.style.visibility = 'visible';
   }
@@ -291,7 +368,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function showCardInSecondPosition(card, imageIndex) {
     // For now: instant appear with new content
     // Future: add sliding in transition here
-    card.img.src = images[imageIndex].src;
+    card.img.src = images[imageIndex].images[images[imageIndex].currentImageIndex];
     card.title.textContent = images[imageIndex].caption;
     card.element.style.visibility = 'visible';
   }

@@ -1,6 +1,6 @@
 [
-  {"name": "1", "caption": "1. Sujeeth Sign- My expecatations", "rating": 7},
-  {"name": "2", "caption": "2. My Satisfaction", "rating": 7},
+  {"name": ["1", "1b", "1c"], "caption": "1. Sujeeth Sign- My expecatations", "rating": 7},
+  {"name": ["2", "2b"], "caption": "2. My Satisfaction", "rating": 7},
   {"name": "3", "caption": "3. BMS / IMDB Ratings", "rating": 0},
   {"name": "4", "caption": "4. Pavan Kalyan - The Actor", "rating": 7},
   {"name": "5", "caption": "5. Pavan Kalyan - The Hero", "rating": 8},

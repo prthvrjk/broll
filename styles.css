@@ -253,6 +253,39 @@ body {
   background-color: #0056b3;
 }
 
+#image-thumbnails {
+  position: fixed;
+  bottom: 140px; /* Above the show button */
+  right: 30px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  z-index: 1002;
+}
+
+.thumbnail-item {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.thumbnail-item:hover {
+  border-color: #007bff;
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.thumbnail-item.active {
+  border-color: #ffc107;
+  opacity: 1;
+  box-shadow: 0 0 15px rgba(255, 193, 7, 0.6);
+}
+
 .slide-out-left {
   transform: translateX(-100vw) !important;
 }
