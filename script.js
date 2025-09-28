@@ -4,9 +4,27 @@ document.addEventListener("DOMContentLoaded", () => {
   let images = [];
   let current = 0;
 
+  // Next strip movement configuration
+  // Naming: main image = x-1, next strip shows x and x+1
+  let nextStripTimer = null;
+  let countdownTimer = null;
+  let timeRemaining = 0;
+  let nextStripStartIndex = 0; // Tracks where next strip is currently pointing
+  const MOVE_INTERVAL = 3000; // 3 seconds
+
+  // Transition options: 'fade', 'slide', 'vanish', 'flip', 'bounce'
+  // Change TRANSITION_TYPE to test different animations:
+  // - 'fade': Gentle fade out/in effect
+  // - 'slide': Slides out left, slides in from right
+  // - 'vanish': Scale down with fade, scale up with fade
+  // - 'flip': 3D flip rotation effect
+  // - 'bounce': Bouncy scale animation
+  const TRANSITION_TYPE = 'slide';
+
   const brollContainer = document.getElementById("broll-container");
   const broll = document.getElementById("broll");
   const nextStrip = document.getElementById("next-strip");
+  const autoRotationTimer = document.getElementById("auto-rotation-timer");
   const nextCards = [
     {
       element: document.getElementById("next-1"),
@@ -66,6 +84,9 @@ document.addEventListener("DOMContentLoaded", () => {
     )).filter(Boolean);
 
     updateCarousel();
+
+    // Start the 3-second timer for next strip movement
+    startNextStripTimer();
   }
 
   let isTransitioning = false;
@@ -118,24 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('Could not calculate image dimensions, using defaults');
     }
 
-    // Update next previews (next 2 images)
-    let hasNextImages = false;
+    // Initialize next strip to show x and x+1 (where main image is x-1)
+    nextStripStartIndex = current + 1;
+    updateNextStripCards(nextStripStartIndex, false);
 
-    for (let i = 0; i < 2; i++) {
-      const nextIndex = current + i + 1;
-      const card = nextCards[i];
-
-      if (nextIndex < images.length) {
-        card.img.src = images[nextIndex].src;
-        card.title.textContent = images[nextIndex].caption;
-        card.element.style.display = 'block';
-        hasNextImages = true;
-      } else {
-        card.element.style.display = 'none';
-      }
-    }
-
-    // Show/hide the entire strip
+    // Show the strip if we have enough images
+    const hasNextImages = images.length > 1;
     nextStrip.style.opacity = hasNextImages ? '1' : '0';
 
     // Update rating button text with current image rating
@@ -152,6 +161,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Reset container overflow when scale returns to 1
     brollContainer.style.overflow = 'hidden';
     brollContainer.style.zIndex = 'auto';
+
+    // Reset next strip to show x and x+1 relative to new main image, then restart timer
+    console.log("📱 Main image changed - resetting next strip and restarting timer");
+    nextStripStartIndex = current + 1;
+    updateNextStripCards(nextStripStartIndex, false);
+    startNextStripTimer();
 
   }
 
@@ -195,6 +210,190 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 50);
     }, 200);
 
+  }
+
+  // --- Next Strip Auto-Rotation Functions ---
+  function updateNextStripCards(startIndex, useTransition = true) {
+    if (!images.length || images.length <= 2) return;
+
+    // Calculate which images to show (with wrap-around)
+    const card1Index = startIndex % images.length;
+    const card2Index = (startIndex + 1) % images.length;
+
+    if (useTransition) {
+      console.log(`🎬 Transitioning to images #${card1Index + 1} and #${card2Index + 1}`);
+    }
+
+    // Direct update without any transitions - completely static
+    nextCards[0].img.src = images[card1Index].src;
+    nextCards[0].title.textContent = images[card1Index].caption;
+    nextCards[1].img.src = images[card2Index].src;
+    nextCards[1].title.textContent = images[card2Index].caption;
+  }
+
+  // === NEXT STRIP MOVEMENT FUNCTIONS ===
+
+  function moveNextImages() {
+    if (!images.length || images.length <= 2) return;
+
+    // Get what's currently showing in next strip
+    const currentFirstCard = nextCards[0];
+    const currentSecondCard = nextCards[1];
+
+    // Advance to next position in sequence
+    nextStripStartIndex = (nextStripStartIndex + 1) % images.length;
+
+    // Calculate what should show after movement
+    const newFirstIndex = nextStripStartIndex; // New x
+    const newSecondIndex = (nextStripStartIndex + 1) % images.length; // New x+1
+
+    console.log(`📱 moveNextImages:`);
+    console.log(`   Before: [${currentFirstCard.title.textContent}] [${currentSecondCard.title.textContent}]`);
+    console.log(`   After:  [${images[newFirstIndex]?.caption}] [${images[newSecondIndex]?.caption}]`);
+    console.log(`   NextStripIndex: ${nextStripStartIndex}`);
+
+    // Step 1: Hide first card (x disappears)
+    hideCard(currentFirstCard);
+
+    // Step 2: Update first card with new x content and show it
+    moveCardToFirstPosition(currentFirstCard, newFirstIndex);
+
+    // Step 3: Update second card with new x+1 content
+    showCardInSecondPosition(currentSecondCard, newSecondIndex);
+
+    console.log(`✅ Movement complete: [${currentFirstCard.title.textContent}] [${currentSecondCard.title.textContent}]`);
+  }
+
+  // Helper functions to get current indices
+  function getCurrentXIndex() {
+    return (current + 1) % images.length;
+  }
+
+  function getCurrentXPlus1Index() {
+    return (current + 2) % images.length;
+  }
+
+  function getNewXPlus2Index() {
+    return (current + 3) % images.length;
+  }
+
+  // Movement functions (structured for future transitions)
+  function hideCard(card) {
+    // For now: instant disappear
+    // Future: add transition logic here
+    card.element.style.visibility = 'hidden';
+  }
+
+  function moveCardToFirstPosition(card, imageIndex) {
+    // For now: instant move to first position with new content
+    // Future: add sliding transition here
+    card.img.src = images[imageIndex].src;
+    card.title.textContent = images[imageIndex].caption;
+    card.element.style.visibility = 'visible';
+  }
+
+  function showCardInSecondPosition(card, imageIndex) {
+    // For now: instant appear with new content
+    // Future: add sliding in transition here
+    card.img.src = images[imageIndex].src;
+    card.title.textContent = images[imageIndex].caption;
+    card.element.style.visibility = 'visible';
+  }
+
+  // === TIMER FUNCTIONS ===
+
+  function startNextStripTimer() {
+    // Clear any existing timer
+    if (nextStripTimer) {
+      clearInterval(nextStripTimer);
+    }
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+    }
+
+    console.log(`🕐 Starting 3-second timer for next strip movement`);
+
+    // Start countdown display
+    startCountdownDisplay();
+
+    // Start 3-second interval
+    nextStripTimer = setInterval(() => {
+      moveNextImages();
+      // Restart countdown for next cycle
+      startCountdownDisplay();
+    }, MOVE_INTERVAL);
+  }
+
+  function startNextStripAutoRotation() {
+    if (nextStripTimer) {
+      clearInterval(nextStripTimer);
+    }
+
+    console.log(`\n🎬 AUTO-ROTATION STARTED`);
+    console.log(`📊 Images loaded: ${images.length}`);
+    console.log(`🎯 Starting index: ${nextStripIndex}`);
+    console.log(`👀 Initial display: #${nextStripIndex + 1} ("${images[nextStripIndex]?.caption}") and #${nextStripIndex + 2} ("${images[nextStripIndex + 1]?.caption}")`);
+    console.log(`⏰ Rotation interval: ${AUTO_ROTATION_INTERVAL}ms (${AUTO_ROTATION_INTERVAL/1000}s)`);
+    console.log(`\n--- Rotation Log ---`);
+
+    // Start the visual countdown
+    startCountdownDisplay();
+
+    nextStripTimer = setInterval(() => {
+      if (images.length > 2) {
+        const oldIndex = nextStripIndex;
+        nextStripIndex = (nextStripIndex + 1) % images.length;
+        console.log(`🔄 Auto-rotating next strip: ${oldIndex} -> ${nextStripIndex}`);
+
+        const card1Index = nextStripIndex % images.length;
+        const card2Index = (nextStripIndex + 1) % images.length;
+        console.log(`Will show images: #${card1Index + 1} ("${images[card1Index]?.caption}") and #${card2Index + 1} ("${images[card2Index]?.caption}")`);
+
+        updateNextStripCards(nextStripIndex, true);
+
+        // Restart the countdown for next rotation
+        startCountdownDisplay();
+      } else {
+        console.log("❌ Auto-rotation stopped: not enough images");
+        stopNextStripAutoRotation();
+      }
+    }, AUTO_ROTATION_INTERVAL);
+  }
+
+  function stopNextStripAutoRotation() {
+    if (nextStripTimer) {
+      clearInterval(nextStripTimer);
+      nextStripTimer = null;
+    }
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    updateTimerDisplay("Stopped");
+  }
+
+  function startCountdownDisplay() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+    }
+
+    timeRemaining = MOVE_INTERVAL / 1000; // Convert to seconds
+    updateTimerDisplay(`Next move: ${timeRemaining}s`);
+
+    countdownTimer = setInterval(() => {
+      timeRemaining--;
+      if (timeRemaining > 0) {
+        updateTimerDisplay(`Next move: ${timeRemaining}s`);
+      } else {
+        updateTimerDisplay("Moving...");
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay(text) {
+    if (autoRotationTimer) {
+      autoRotationTimer.textContent = text;
+    }
   }
 
   // --- Swipe / pinch detection ---

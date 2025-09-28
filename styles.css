@@ -77,11 +77,30 @@ body {
   gap: 20px;
   z-index: 1001;
   transition: opacity 0.4s ease;
+  transform-style: preserve-3d; /* For 3D flip animations */
+}
+
+#auto-rotation-timer {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffc107;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  border: 2px solid #ffc107;
+  white-space: nowrap;
+  min-width: 150px;
+  text-align: center;
 }
 
 .next-card {
   position: relative;
   transition: all 0.4s ease;
+  overflow: hidden; /* Ensure clean sliding animations */
 }
 
 .next-card:hover {
