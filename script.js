@@ -25,8 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const ratingSpinner = document.getElementById("rating-spinner");
   const ratingHyphen = document.getElementById("rating-hyphen");
   const showRatingBtn = document.getElementById("show-rating-btn");
-  const prevBtn = document.getElementById("prev-btn");
-  const nextBtn = document.getElementById("next-btn");
 
   // Populate rating spinner
   const totalDigitsForAnimation = (animationRounds + 1) * 11;
@@ -143,16 +141,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Update rating button text
     showRatingBtn.textContent = "SHOW";
 
-    // Update navigation button states
-    prevBtn.disabled = (current === 0);
-    nextBtn.disabled = (current === images.length - 1);
-
-    // Reset zoom and position
+    // Reset zoom
     currentScale = 1;
-    currentTranslateX = 0;
-    currentTranslateY = 0;
     broll.style.setProperty('--base-scale', '1');
-    broll.style.transform = "translate3d(0px, 0px, 0) scale(1)";
+    broll.style.transform = "scale(1)";
     broll.style.transformOrigin = 'center center';
     brollContainer.style.animation = 'pulse 1.15s ease-in-out infinite';
 
@@ -189,7 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Slide in new content
       setTimeout(() => {
         broll.style.setProperty('--base-scale', '1');
-        broll.style.transform = "translate3d(0px, 0px, 0) scale(1)";
+        broll.style.transform = "scale(1)";
         broll.style.transformOrigin = 'center center';
         brollContainer.style.animation = 'pulse 1.15s ease-in-out infinite';
         brollContainer.classList.remove(slideInClass);
@@ -204,21 +196,68 @@ document.addEventListener("DOMContentLoaded", () => {
 
   }
 
+  // --- Swipe / pinch detection ---
+  let xDown = null;
+  let yDown = null;
+  let touchCount = 0;
+  let isPinching = false;
 
-  // --- Pinch zoom and drag for image ---
+  document.addEventListener("touchstart", (e) => {
+    touchCount = e.touches.length;
+    if (touchCount > 1) {
+      isPinching = true;
+    } else {
+      xDown = e.touches[0].clientX;
+      yDown = e.touches[0].clientY;
+    }
+  });
+
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches.length > 1) {
+      isPinching = true;
+    }
+  });
+
+  document.addEventListener("touchend", (e) => {
+    if (isPinching) {
+      isPinching = false;
+      xDown = null;
+      yDown = null;
+      touchCount = 0;
+      return;
+    }
+
+    if (!xDown || !yDown) return;
+
+    let xUp = e.changedTouches[0].clientX;
+    let yUp = e.changedTouches[0].clientY;
+
+    let xDiff = xDown - xUp;
+    let yDiff = yDown - yUp;
+
+    if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 30) {
+      if (xDiff > 0 && current < images.length - 1) {
+        current++;
+        update('left'); // Swipe left (finger goes left) → content comes from right
+      } else if (xDiff < 0 && current > 0) {
+        current--;
+        update('right'); // Swipe right (finger goes right) → content comes from left
+      }
+    }
+
+    xDown = null;
+    yDown = null;
+    touchCount = 0;
+  });
+
+  // --- Pinch zoom for image only ---
   let currentScale = 1;
   let isZooming = false;
-  let isDragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let currentTranslateX = 0;
-  let currentTranslateY = 0;
 
   brollContainer.addEventListener("touchstart", (e) => {
     if (e.touches.length === 2) {
       e.preventDefault();
       isZooming = true;
-      isDragging = false; // Stop any drag when starting zoom
 
       // Disable pulse animation during zoom
       brollContainer.style.animation = 'none';
@@ -255,21 +294,6 @@ document.addEventListener("DOMContentLoaded", () => {
       broll.dataset.initialScale = currentScale;
       broll.dataset.originX = originX;
       broll.dataset.originY = originY;
-    } else if (e.touches.length === 1) {
-      // Single finger drag
-      isDragging = true;
-      isZooming = false;
-
-      dragStartX = e.touches[0].clientX;
-      dragStartY = e.touches[0].clientY;
-
-      // Allow image to break out of container during drag
-      brollContainer.style.overflow = 'visible';
-      brollContainer.style.zIndex = '1000';
-
-      // Disable pulse animation and transitions during drag for immediate response
-      brollContainer.style.animation = 'none';
-      broll.style.transition = 'none';
     }
   }, { passive: false });
 
@@ -288,61 +312,33 @@ document.addEventListener("DOMContentLoaded", () => {
       // Prevent zooming out beyond original size
       newScale = Math.max(1, newScale);
 
-      // Auto-reset position when zooming back to scale 1
-      if (newScale <= 1 && currentScale > 1) {
-        // Reset position when zoom reaches 1
-        currentTranslateX = 0;
-        currentTranslateY = 0;
-        broll.style.transformOrigin = 'center center';
-      } else if (newScale > 1) {
-        // Maintain the pinch point transform origin throughout zoom
+      // Maintain the pinch point transform origin throughout zoom
+      if (newScale > 1) {
         const originX = parseFloat(broll.dataset.originX);
         const originY = parseFloat(broll.dataset.originY);
         broll.style.transformOrigin = `${originX}% ${originY}%`;
       } else {
-        // Reset to center when fully zoomed out
+        // Only reset to center when fully zoomed out
         broll.style.transformOrigin = 'center center';
       }
 
       currentScale = newScale;
 
-      // Apply scale and translation to the image
+      // Apply scale only to the image - let transform-origin handle the positioning
       broll.style.setProperty('--base-scale', newScale);
-      broll.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${newScale})`;
-    } else if (e.touches.length === 1 && isDragging) {
-      e.preventDefault();
-
-      // Calculate drag distance
-      const deltaX = e.touches[0].clientX - dragStartX;
-      const deltaY = e.touches[0].clientY - dragStartY;
-
-      // Update current translation
-      currentTranslateX += deltaX;
-      currentTranslateY += deltaY;
-
-      // Use translate3d for hardware acceleration and avoid recomposition
-      broll.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`;
-
-      // Update drag start position for next move
-      dragStartX = e.touches[0].clientX;
-      dragStartY = e.touches[0].clientY;
+      broll.style.transform = `scale(${newScale})`;
     }
   }, { passive: false });
 
   brollContainer.addEventListener("touchend", (e) => {
     if (e.touches.length < 2) {
       isZooming = false;
-    }
 
-    if (e.touches.length === 0) {
-      isDragging = false;
-
-      // Re-enable pulse animation and transitions
+      // Re-enable pulse animation
       brollContainer.style.animation = 'pulse 1.15s ease-in-out infinite';
-      broll.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
-      // Only reset container overflow if image is back to normal scale AND position
-      if (currentScale <= 1 && currentTranslateX === 0 && currentTranslateY === 0) {
+      // Only reset container overflow if image is back to normal scale
+      if (currentScale <= 1) {
         brollContainer.style.overflow = 'hidden';
         brollContainer.style.zIndex = 'auto';
       }
@@ -413,21 +409,6 @@ document.addEventListener("DOMContentLoaded", () => {
       // Hide rating
       ratingContainer.style.display = "none";
       showRatingBtn.textContent = "SHOW";
-    }
-  });
-
-  // Navigation button event listeners
-  prevBtn.addEventListener("click", () => {
-    if (current > 0) {
-      current--;
-      update('right');
-    }
-  });
-
-  nextBtn.addEventListener("click", () => {
-    if (current < images.length - 1) {
-      current++;
-      update('left');
     }
   });
 
