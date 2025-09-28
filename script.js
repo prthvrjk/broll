@@ -7,8 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Next strip movement configuration
   // Naming: main image = x-1, next strip shows x and x+1
   let nextStripTimer = null;
-  let countdownTimer = null;
-  let timeRemaining = 0;
   let nextStripStartIndex = 0; // Tracks where next strip is currently pointing
   const MOVE_INTERVAL = 3000; // 3 seconds
 
@@ -24,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const brollContainer = document.getElementById("broll-container");
   const broll = document.getElementById("broll");
   const nextStrip = document.getElementById("next-strip");
-  const autoRotationTimer = document.getElementById("auto-rotation-timer");
   const nextCards = [
     {
       element: document.getElementById("next-1"),
@@ -306,20 +303,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (nextStripTimer) {
       clearInterval(nextStripTimer);
     }
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-    }
 
     console.log(`🕐 Starting 3-second timer for next strip movement`);
-
-    // Start countdown display
-    startCountdownDisplay();
 
     // Start 3-second interval
     nextStripTimer = setInterval(() => {
       moveNextImages();
-      // Restart countdown for next cycle
-      startCountdownDisplay();
     }, MOVE_INTERVAL);
   }
 
@@ -335,8 +324,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log(`⏰ Rotation interval: ${AUTO_ROTATION_INTERVAL}ms (${AUTO_ROTATION_INTERVAL/1000}s)`);
     console.log(`\n--- Rotation Log ---`);
 
-    // Start the visual countdown
-    startCountdownDisplay();
 
     nextStripTimer = setInterval(() => {
       if (images.length > 2) {
@@ -350,8 +337,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         updateNextStripCards(nextStripIndex, true);
 
-        // Restart the countdown for next rotation
-        startCountdownDisplay();
       } else {
         console.log("❌ Auto-rotation stopped: not enough images");
         stopNextStripAutoRotation();
@@ -364,36 +349,8 @@ document.addEventListener("DOMContentLoaded", () => {
       clearInterval(nextStripTimer);
       nextStripTimer = null;
     }
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-    }
-    updateTimerDisplay("Stopped");
   }
 
-  function startCountdownDisplay() {
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-    }
-
-    timeRemaining = MOVE_INTERVAL / 1000; // Convert to seconds
-    updateTimerDisplay(`Next move: ${timeRemaining}s`);
-
-    countdownTimer = setInterval(() => {
-      timeRemaining--;
-      if (timeRemaining > 0) {
-        updateTimerDisplay(`Next move: ${timeRemaining}s`);
-      } else {
-        updateTimerDisplay("Moving...");
-      }
-    }, 1000);
-  }
-
-  function updateTimerDisplay(text) {
-    if (autoRotationTimer) {
-      autoRotationTimer.textContent = text;
-    }
-  }
 
   // --- Swipe / pinch detection ---
   let xDown = null;
