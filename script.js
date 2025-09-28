@@ -546,7 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Animation
       const ratingValue = images[current].rating;
-      const digitHeight = 70;
+      const digitHeight = 210;
       const totalDigits = 11;
 
       // 1. Reset to 0
