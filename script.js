@@ -139,9 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('Could not calculate image dimensions, using defaults');
     }
 
-    // Initialize next strip to show x and x+1 (where main image is x-1)
-    nextStripStartIndex = current + 1;
-    updateNextStripCards(nextStripStartIndex, false);
+    // Initialize next strip to show x and x+1 (where main image is x-1) - ONLY on first load
+    if (nextStripStartIndex === 0) {
+      nextStripStartIndex = current + 1;
+      updateNextStripCards(nextStripStartIndex, false);
+    }
 
     // Show the strip if we have enough images
     const hasNextImages = images.length > 1;
@@ -162,11 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
     brollContainer.style.overflow = 'hidden';
     brollContainer.style.zIndex = 'auto';
 
-    // Reset next strip to show x and x+1 relative to new main image, then restart timer
-    console.log("📱 Main image changed - resetting next strip and restarting timer");
-    nextStripStartIndex = current + 1;
-    updateNextStripCards(nextStripStartIndex, false);
-    startNextStripTimer();
+    // Main image changed - next strip continues independently (no reset)
+    console.log("📱 Main image changed - next strip continues independently");
 
   }
 
