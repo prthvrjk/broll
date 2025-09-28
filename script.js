@@ -138,8 +138,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show/hide the entire strip
     nextStrip.style.opacity = hasNextImages ? '1' : '0';
 
-    // Update rating button text
-    showRatingBtn.textContent = "SHOW";
+    // Update rating button text with current image rating
+    const currentRating = images[current].rating;
+    showRatingBtn.textContent = `SHOW(${currentRating})`;
 
     // Reset zoom
     currentScale = 1;
@@ -383,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   showRatingBtn.addEventListener("click", () => {
-    if (showRatingBtn.textContent === "SHOW") {
+    if (showRatingBtn.textContent.startsWith("SHOW")) {
       // Show rating
       ratingContainer.style.display = "flex";
       showRatingBtn.textContent = "HIDE";
@@ -408,7 +409,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       // Hide rating
       ratingContainer.style.display = "none";
-      showRatingBtn.textContent = "SHOW";
+      const currentRating = images[current].rating;
+      showRatingBtn.textContent = `SHOW(${currentRating})`;
     }
   });
 
