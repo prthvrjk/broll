@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const ratingHyphen = document.getElementById("rating-hyphen");
   const showRatingBtn = document.getElementById("show-rating-btn");
   const thumbnailContainer = document.getElementById("image-thumbnails");
+  const starRatingContainer = document.getElementById("star-rating");
 
   // Will be populated after loading images to include any decimal ratings
   let ratingValues = [];
@@ -693,6 +694,42 @@ document.addEventListener("DOMContentLoaded", () => {
     source.start(0);
   }
 
+  function showStarRating(rating) {
+    // Create 5 stars with exact fill based on rating/2
+    const starCount = 5;
+    const fillValue = rating / 2; // Convert /10 to /5
+
+    starRatingContainer.innerHTML = '';
+
+    for (let i = 0; i < starCount; i++) {
+      const starWrapper = document.createElement('span');
+      starWrapper.style.position = 'relative';
+      starWrapper.style.display = 'inline-block';
+
+      // Background outline star
+      const outlineStar = document.createElement('span');
+      outlineStar.className = 'star outline';
+      outlineStar.textContent = '★';
+      starWrapper.appendChild(outlineStar);
+
+      // Foreground filled star with clip
+      const filledStar = document.createElement('span');
+      filledStar.className = 'star filled';
+      filledStar.textContent = '★';
+      filledStar.style.position = 'absolute';
+      filledStar.style.left = '0';
+      filledStar.style.top = '0';
+      filledStar.style.overflow = 'hidden';
+
+      // Calculate fill percentage for this star
+      const starFillAmount = Math.max(0, Math.min(1, fillValue - i));
+      filledStar.style.width = `${starFillAmount * 100}%`;
+
+      starWrapper.appendChild(filledStar);
+      starRatingContainer.appendChild(starWrapper);
+    }
+  }
+
   showRatingBtn.addEventListener("click", () => {
     // Play swoosh sound on every button click
     playSwoosh(1.0);
@@ -708,6 +745,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Rebuild spinner for this specific rating (includes .5 if needed)
       populateRatingSpinner(ratingValue);
+
+      // Hide stars initially
+      starRatingContainer.classList.remove('visible');
 
       // 1. Reset to 0
       ratingSpinner.style.transition = 'none';
@@ -727,11 +767,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         ratingSpinner.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
         ratingSpinner.style.transform = `translateY(${finalPosition}px)`;
+
+        // Show stars after animation completes
+        setTimeout(() => {
+          showStarRating(ratingValue);
+          starRatingContainer.classList.add('visible');
+        }, duration * 1000);
       }, 10);
 
     } else {
       // Hide rating
       ratingContainer.style.display = "none";
+      starRatingContainer.classList.remove('visible');
       const currentRating = images[current].rating;
       showRatingBtn.textContent = `SHOW(${currentRating})`;
     }
