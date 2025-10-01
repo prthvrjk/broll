@@ -125,6 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initial population with base ratings only (will be rebuilt when showing rating)
     populateRatingSpinner(0);
 
+    // Load swoosh sound into memory
+    await loadSwooshSound();
+
     updateCarousel();
 
     // Start the 3-second timer for next strip movement
@@ -249,6 +252,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentMainIndex = currentPoint.currentImageIndex;
     const thumbnailSrc = currentPoint.images[thumbnailIndex];
     const mainSrc = currentPoint.images[currentMainIndex];
+
+    // Play swoosh sound on image swap
+    playSwoosh(1.0);
 
     // Swap the images
     currentPoint.currentImageIndex = thumbnailIndex;
@@ -635,7 +641,62 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 100);
   });
 
+  // Create shared audio context and buffer for swoosh sound
+  let audioContext = null;
+  let swooshBuffer = null;
+
+  function getAudioContext() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioContext;
+  }
+
+  // Load the swoosh sound file into memory
+  async function loadSwooshSound() {
+    const ctx = getAudioContext();
+    try {
+      const response = await fetch('sounds/swoosh.mp3');
+      const arrayBuffer = await response.arrayBuffer();
+      swooshBuffer = await ctx.decodeAudioData(arrayBuffer);
+      console.log('Swoosh sound loaded successfully');
+    } catch (error) {
+      console.error('Failed to load swoosh sound:', error);
+    }
+  }
+
+  // Function to play the loaded swoosh sound with adjusted speed
+  function playSwoosh(playbackRate = 1.0) {
+    if (!swooshBuffer) {
+      console.warn('Swoosh sound not loaded yet');
+      return;
+    }
+
+    const ctx = getAudioContext();
+
+    // Resume context if suspended (browser autoplay policy)
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    const source = ctx.createBufferSource();
+    const gainNode = ctx.createGain();
+
+    source.buffer = swooshBuffer;
+    source.playbackRate.value = playbackRate; // Speed up/slow down playback
+    source.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    // Adjust volume if needed
+    gainNode.gain.value = 0.6;
+
+    source.start(0);
+  }
+
   showRatingBtn.addEventListener("click", () => {
+    // Play swoosh sound on every button click
+    playSwoosh(1.0);
+
     if (showRatingBtn.textContent.startsWith("SHOW")) {
       // Show rating
       ratingContainer.style.display = "flex";
